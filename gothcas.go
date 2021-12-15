@@ -28,35 +28,29 @@ type AttributeMap struct {
 type Provider struct {
 	name         string
 	authUrl      *url.URL
-	serviceUrl   *url.URL
+	callbackUrl  *url.URL
 	attributeMap *AttributeMap
 }
 
 // New constructs a Provider with with the given parameters.
-func New(authUrl string, serviceUrl string, attributeMap *AttributeMap) (*Provider, error) {
+func New(authUrl string, callbackUrl string, attributeMap *AttributeMap) (*Provider, error) {
 	var err error
 
+	authUrlParsed, err := url.Parse(authUrl)
+	if err != nil {
+		return nil, err
+	}
+	callbackUrlParsed, err := url.Parse(callbackUrl)
+	if err != nil {
+		return nil, err
+	}
+
 	p := &Provider{
-		name: "cas",
+		name:         "cas",
+		authUrl:      authUrlParsed,
+		callbackUrl:  callbackUrlParsed,
+		attributeMap: attributeMap,
 	}
-
-	p.authUrl, err = url.Parse(authUrl)
-	if err != nil {
-		return nil, err
-	}
-	if p.authUrl.Path == "" {
-		p.authUrl.Path = "/"
-	}
-
-	p.serviceUrl, err = url.Parse(serviceUrl)
-	if err != nil {
-		return nil, err
-	}
-	if p.serviceUrl.Path == "" {
-		p.serviceUrl.Path = "/"
-	}
-
-	p.attributeMap = attributeMap
 
 	return p, nil
 }
@@ -74,8 +68,8 @@ func (p *Provider) SetName(name string) {
 // BeginAuth returns a session that uses the desired authUrl.
 func (p *Provider) BeginAuth(state string) (goth.Session, error) {
 	s := &Session{
-		AuthURL:    p.authUrl,
-		ServiceURL: p.serviceUrl,
+		AuthURL:     p.authUrl,
+		CallbackURL: p.callbackUrl,
 	}
 
 	return s, nil

@@ -14,20 +14,20 @@ import (
 // Session is a CAS authentication session.
 type Session struct {
 	AuthURL     *url.URL
-	ServiceURL  *url.URL
+	CallbackURL  *url.URL
 	CASResponse *cas.AuthenticationResponse
 }
 
 // GetAuthURL return CAS authentication URL for the session.
 func (s *Session) GetAuthURL() (string, error) {
-	authUrl := *s.AuthURL
+	authUrl := s.AuthURL
+	authUrl = authUrl.ResolveReference(&url.URL{Path: "cas/login"})
 	query := authUrl.Query()
 	if authUrl.Query().Has("service") {
 		return "", errors.New("Auth URL already has serivce parameter")
 	}
-	query.Add("service", s.ServiceURL.String())
+	query.Add("service", s.CallbackURL.String())
 	authUrl.RawQuery = query.Encode()
-	authUrl.Path = path.Join(authUrl.Path, "cas/login")
 	return authUrl.String(), nil
 }
 
@@ -48,7 +48,7 @@ func (s *Session) Authorize(provider goth.Provider, params goth.Params) (string,
 	casUrl := s.AuthURL
 	casUrl.Path = path.Join(casUrl.Path, "cas")
 	validator := cas.NewServiceTicketValidator(http.DefaultClient, casUrl)
-	s.CASResponse, err = validator.ValidateTicket(p.serviceUrl, ticket)
+	s.CASResponse, err = validator.ValidateTicket(p.callbackUrl, ticket)
 	if err != nil {
 		return "", err
 	}
