@@ -1,4 +1,4 @@
-module github.com/pelicaned/gothcas
+module github.com/nicholasngai/gothcas
 
 go 1.17
 
